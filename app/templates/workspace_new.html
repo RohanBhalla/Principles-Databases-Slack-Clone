@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}New workspace · snickr{% endblock %}
+{% block content %}
+  <div class="card">
+    <h1>Create workspace</h1>
+    <form method="post" action="/workspaces?csrf_token={{ request.session.get('csrf_token') }}">
+      <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}" />
+      <label class="field">
+        <span>Name</span>
+        <input name="name" required />
+      </label>
+      <label class="field">
+        <span>Description</span>
+        <input name="description" />
+      </label>
+      <button class="btn" type="submit">Create</button>
+    </form>
+  </div>
+{% endblock %}
+

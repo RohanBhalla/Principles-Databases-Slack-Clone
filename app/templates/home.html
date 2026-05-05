@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Home · snickr{% endblock %}
+{% block content %}
+  <div class="split">
+    <section class="panel">
+      <h2>Workspaces</h2>
+      <div class="actions">
+        <a class="btn btn--small" href="/workspaces/new">New workspace</a>
+      </div>
+
+      {% if workspaces|length == 0 %}
+        <p class="muted">You’re not a member of any workspace yet.</p>
+      {% else %}
+        <ul class="list">
+          {% for w in workspaces %}
+            <li class="list__item">
+              <a href="/w/{{ w.workspace_id }}"><strong>{{ w.name }}</strong></a>
+              {% if w.is_admin %}<span class="pill">admin</span>{% endif %}
+              <div class="muted">{{ w.description or "" }}</div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </section>
+
+    <section class="panel">
+      <h2>Invitations</h2>
+      {% if invitations|length == 0 %}
+        <p class="muted">No pending invitations.</p>
+      {% else %}
+        <ul class="list">
+          {% for i in invitations %}
+            <li class="list__item">
+              <div>
+                <div>
+                  Invited by <strong>{{ i.inviter_username }}</strong>
+                  {% if i.workspace_id %}
+                    to workspace <strong>{{ i.workspace_name }}</strong>
+                  {% else %}
+                    to channel <strong>{{ i.channel_name }}</strong>
+                  {% endif %}
+                </div>
+                <div class="muted">{{ i.created_at }}</div>
+              </div>
+              <div class="row">
+                <form method="post" action="/invitations/{{ i.invitation_id }}/respond?csrf_token={{ request.session.get('csrf_token') }}">
+                  <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}" />
+                  <input type="hidden" name="action" value="accepted" />
+                  <button class="btn btn--small" type="submit">Accept</button>
+                </form>
+                <form method="post" action="/invitations/{{ i.invitation_id }}/respond?csrf_token={{ request.session.get('csrf_token') }}">
+                  <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}" />
+                  <input type="hidden" name="action" value="rejected" />
+                  <button class="btn btn--small btn--ghost" type="submit">Reject</button>
+                </form>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}
+

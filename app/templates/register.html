@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Register · snickr{% endblock %}
+{% block content %}
+  <div class="card">
+    <h1>Create account</h1>
+    <form method="post" action="/register?csrf_token={{ request.session.get('csrf_token') }}">
+      <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}" />
+      <label class="field">
+        <span>Email</span>
+        <input name="email" type="email" autocomplete="email" required />
+      </label>
+      <label class="field">
+        <span>Username</span>
+        <input name="username" type="text" autocomplete="username" required />
+      </label>
+      <label class="field">
+        <span>Nickname (optional)</span>
+        <input name="nickname" type="text" />
+      </label>
+      <label class="field">
+        <span>Password</span>
+        <input name="password" type="password" autocomplete="new-password" required />
+      </label>
+      <button class="btn" type="submit">Create</button>
+    </form>
+    <p class="muted">Already have an account? <a href="/login">Sign in</a>.</p>
+  </div>
+{% endblock %}
+

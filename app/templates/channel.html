@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}#{{ channel.name }} · {{ workspace.name }} · snickr{% endblock %}
+{% block content %}
+  <div class="ws">
+    <aside class="ws__sidebar">
+      <div class="ws__title">
+        <div class="ws__name">{{ workspace.name }}</div>
+        <div class="muted">{{ workspace.description or "" }}</div>
+      </div>
+
+      <div class="ws__section">
+        <div class="ws__sectionTitle">Channels</div>
+        <ul class="chanlist">
+          {% for c in channels %}
+            <li class="chanlist__item">
+              <a class="chanlist__link {% if c.channel_id == channel.channel_id %}chanlist__link--active{% endif %}" href="/w/{{ workspace.workspace_id }}/c/{{ c.channel_id }}">
+                <span class="hash">{% if c.type != 'direct' %}#{% else %}@{% endif %}</span>{{ c.name }}
+              </a>
+              {% if unread_map.get(c.channel_id, 0) > 0 and c.channel_id != channel.channel_id %}
+                <span class="badge">{{ unread_map.get(c.channel_id) }}</span>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </aside>
+
+    <section class="ws__main">
+      <div class="panel">
+        <div class="channelHeader">
+          <div>
+            <div class="channelTitle">
+              {% if channel.type != 'direct' %}#{% else %}@{% endif %}{{ channel.name }}
+            </div>
+            <div class="muted">Messages are shown chronologically.</div>
+          </div>
+          <div class="row">
+            {% if workspace.is_admin %}
+              <form method="post" action="/w/{{ workspace.workspace_id }}/c/{{ channel.channel_id }}/invitations?csrf_token={{ request.session.get('csrf_token') }}" class="row">
+                <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}" />
+                <input class="input" name="invitee_email" type="email" placeholder="invite email" required />
+                <button class="btn btn--small btn--ghost" type="submit">Invite</button>
+              </form>
+            {% endif %}
+            <a href="/w/{{ workspace.workspace_id }}">Workspace</a>
+          </div>
+        </div>
+
+        <div class="messages">
+          {% for m in messages %}
+            <div class="msg">
+              <div class="msg__meta">
+                <strong>{{ m.username }}</strong>
+                {% if m.nickname %}<span class="muted">({{ m.nickname }})</span>{% endif %}
+                <span class="muted">· {{ m.created_at }}</span>
+              </div>
+              <div class="msg__body">{{ m.content }}</div>
+
+              <div class="reactions">
+                {% for r in react_map.get(m.message_id, []) %}
+                  <form method="post" action="/messages/{{ m.message_id }}/react?csrf_token={{ request.session.get('csrf_token') }}" class="inline">
+                    <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}" />
+                    <input type="hidden" name="emoji" value="{{ r.emoji }}" />
+                    <input type="hidden" name="workspace_id" value="{{ workspace.workspace_id }}" />
+                    <input type="hidden" name="channel_id" value="{{ channel.channel_id }}" />
+                    <button class="react {% if (m.message_id, r.emoji) in my_set %}react--mine{% endif %}" type="submit">
+                      {{ r.emoji }} <span class="muted">{{ r.count }}</span>
+                    </button>
+                  </form>
+                {% endfor %}
+
+                <div class="reactPick">
+                  {% for e in emoji_choices %}
+                    <form method="post" action="/messages/{{ m.message_id }}/react?csrf_token={{ request.session.get('csrf_token') }}" class="inline">
+                      <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}" />
+                      <input type="hidden" name="emoji" value="{{ e }}" />
+                      <input type="hidden" name="workspace_id" value="{{ workspace.workspace_id }}" />
+                      <input type="hidden" name="channel_id" value="{{ channel.channel_id }}" />
+                      <button class="react react--pick {% if (m.message_id, e) in my_set %}react--mine{% endif %}" type="submit">{{ e }}</button>
+                    </form>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <form method="post" action="/w/{{ workspace.workspace_id }}/c/{{ channel.channel_id }}/messages?csrf_token={{ request.session.get('csrf_token') }}" class="composer">
+          <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}" />
+          <input class="input composer__input" name="content" placeholder="Write a message…" required />
+          <button class="btn btn--small" type="submit">Send</button>
+        </form>
+      </div>
+    </section>
+  </div>
+{% endblock %}
+

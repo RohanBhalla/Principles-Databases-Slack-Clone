@@ -1,0 +1,1 @@
+cd "/Users/ronballer/Desktop/NYU Masters 2025/Academics/Spring 2026/Databases/Principles-Databases-Slack-Clone" && source .venv/bin/activate && uvicorn app.main:app --host 127.0.0.1 --port 8000 --log-level info

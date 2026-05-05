@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Search · snickr{% endblock %}
+{% block content %}
+  <div class="panel">
+    <h2>Search</h2>
+    <form method="get" action="/search" class="row">
+      <input class="input" name="q" value="{{ q }}" placeholder="keyword (e.g., perpendicular)" />
+      <button class="btn btn--small" type="submit">Search</button>
+    </form>
+
+    {% if q %}
+      <div class="muted" style="margin-top: 10px;">
+        Results for <strong>{{ q }}</strong> ({{ results|length }})
+      </div>
+      <div class="messages" style="margin-top: 10px;">
+        {% for r in results %}
+          <div class="msg">
+            <div class="msg__meta">
+              <strong>{{ r.author_username }}</strong>
+              <span class="muted">· {{ r.created_at }}</span>
+              <span class="muted">· {{ r.workspace_name }} / {{ r.channel_name }}</span>
+            </div>
+            <div class="msg__body">{{ r.content }}</div>
+            <div style="margin-top: 8px;">
+              <a href="/w/{{ r.workspace_id }}/c/{{ r.channel_id }}">Open</a>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}
+

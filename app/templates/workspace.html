@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}{{ workspace.name }} · snickr{% endblock %}
+{% block content %}
+  <div class="ws">
+    <aside class="ws__sidebar">
+      <div class="ws__title">
+        <div class="ws__name">{{ workspace.name }}</div>
+        <div class="muted">
+          <span id="ws-desc-text">{{ workspace.description or "" }}</span>
+          {% if workspace.is_admin %}
+            <button id="ws-desc-edit" class="linkbtn" type="button" style="margin-left: 8px;">Edit</button>
+          {% endif %}
+        </div>
+
+        {% if workspace.is_admin %}
+          <form
+            id="ws-desc-form"
+            method="post"
+            action="/w/{{ workspace.workspace_id }}/description?csrf_token={{ request.session.get('csrf_token') }}"
+            style="display: none; margin-top: 10px;"
+            data-ws-desc-form
+          >
+            <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}" />
+            <div class="row" style="align-items: stretch;">
+              <input
+                id="ws-desc-input"
+                class="input"
+                name="description"
+                value="{{ workspace.description or '' }}"
+                placeholder="Optional description"
+                style="flex: 1;"
+              />
+              <button class="btn btn--small" type="submit">Save</button>
+              <button id="ws-desc-cancel" class="btn btn--small btn--ghost" type="button">Cancel</button>
+            </div>
+          </form>
+        {% endif %}
+      </div>
+
+      <div class="ws__section">
+        <div class="ws__sectionTitle">Channels</div>
+        <ul class="chanlist">
+          {% for c in channels %}
+            <li class="chanlist__item">
+              <a class="chanlist__link" href="/w/{{ workspace.workspace_id }}/c/{{ c.channel_id }}">
+                <span class="hash">{% if c.type != 'direct' %}#{% else %}@{% endif %}</span>{{ c.name }}
+              </a>
+              {% if unread_map.get(c.channel_id, 0) > 0 %}
+                <span class="badge">{{ unread_map.get(c.channel_id) }}</span>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <div class="ws__section">
+        <div class="ws__sectionTitle">Create channel</div>
+        <form method="post" action="/w/{{ workspace.workspace_id }}/channels?csrf_token={{ request.session.get('csrf_token') }}">
+          <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}" />
+          <div class="row">
+            <input class="input" name="name" placeholder="channel-name" required />
+            <select class="input" name="type" required>
+              <option value="public">public</option>
+              <option value="private">private</option>
+              <option value="direct">direct</option>
+            </select>
+          </div>
+          <button class="btn btn--small" type="submit">Create</button>
+        </form>
+      </div>
+
+      {% if workspace.is_admin %}
+        <div class="ws__section">
+          <div class="ws__sectionTitle">Admins</div>
+          <form method="post" action="/w/{{ workspace.workspace_id }}/admins?csrf_token={{ request.session.get('csrf_token') }}">
+            <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}" />
+            <div class="row">
+              <select class="input" name="target_user_id">
+                {% for m in members %}
+                  {% if not m.is_admin %}
+                    <option value="{{ m.user_id }}">{{ m.username }}</option>
+                  {% endif %}
+                {% endfor %}
+              </select>
+              <button class="btn btn--small btn--ghost" type="submit">Promote</button>
+            </div>
+          </form>
+        </div>
+      {% endif %}
+
+      <div class="ws__section">
+        <div class="ws__sectionTitle">Members</div>
+        <ul class="members">
+          {% for m in members %}
+            <li>
+              <strong>{{ m.username }}</strong>
+              {% if m.nickname %}<span class="muted">({{ m.nickname }})</span>{% endif %}
+              {% if m.is_admin %}<span class="pill">admin</span>{% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      {% if workspace.is_admin %}
+        <div class="ws__section">
+          <div class="ws__sectionTitle">Invite</div>
+          <form method="post" action="/w/{{ workspace.workspace_id }}/invitations?csrf_token={{ request.session.get('csrf_token') }}">
+            <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}" />
+            <label class="field" style="margin: 0 0 10px;">
+              <span>Invitee email</span>
+              <input class="input" name="invitee_email" type="email" placeholder="person@example.com" required />
+            </label>
+            <button class="btn btn--small btn--ghost" type="submit">Invite to workspace</button>
+          </form>
+        </div>
+      {% endif %}
+    </aside>
+
+    <section class="ws__main">
+      <div class="card" style="max-width: 100%;">
+        <h1>{{ workspace.name }}</h1>
+        <p class="muted">Pick a channel on the left, or create one.</p>
+      </div>
+    </section>
+  </div>
+
+  {% if workspace.is_admin %}
+    <script src="/static/workspace.js" defer></script>
+  {% endif %}
+{% endblock %}
+
