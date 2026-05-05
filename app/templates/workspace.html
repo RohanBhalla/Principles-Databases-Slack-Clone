@@ -92,10 +92,19 @@
         <div class="ws__sectionTitle">Members</div>
         <ul class="members">
           {% for m in members %}
-            <li>
-              <strong>{{ m.username }}</strong>
-              {% if m.nickname %}<span class="muted">({{ m.nickname }})</span>{% endif %}
-              {% if m.is_admin %}<span class="pill">admin</span>{% endif %}
+            <li class="row" style="justify-content: space-between;">
+              <div>
+                <strong>{{ m.username }}</strong>
+                {% if m.nickname %}<span class="muted">({{ m.nickname }})</span>{% endif %}
+                {% if m.is_admin %}<span class="pill">admin</span>{% endif %}
+              </div>
+              {% if workspace.is_admin and m.user_id != user.user_id %}
+                <form method="post" action="/w/{{ workspace.workspace_id }}/members/remove?csrf_token={{ request.session.get('csrf_token') }}" class="inline" data-confirm="Remove {{ m.username }} from this workspace?">
+                  <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}" />
+                  <input type="hidden" name="target_user_id" value="{{ m.user_id }}" />
+                  <button class="btn btn--small btn--ghost" type="submit">Remove</button>
+                </form>
+              {% endif %}
             </li>
           {% endfor %}
         </ul>

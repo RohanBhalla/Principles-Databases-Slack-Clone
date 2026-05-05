@@ -181,3 +181,24 @@ async def update_description(
         return RedirectResponse(url=f"/w/{workspace_id}?error=Could+not+update+description", status_code=303)
     return RedirectResponse(url=f"/w/{workspace_id}?success=Description+updated", status_code=303)
 
+
+@router.post("/w/{workspace_id}/members/remove")
+async def remove_member(
+    request: Request,
+    workspace_id: int,
+    user: CurrentUser = Depends(require_user),
+    target_user_id: int = Form(...),
+):
+    pool = request.app.state.db_pool
+    try:
+        async with pool.connection() as conn:
+            await call_proc(conn, "remove_workspace_member", workspace_id, user.user_id, target_user_id)
+    except Exception as e:
+        msg = str(e)
+        if "not_authorized" in msg:
+            return RedirectResponse(url=f"/w/{workspace_id}?error=Admin+permissions+required", status_code=303)
+        if "cannot_remove_last_admin" in msg:
+            return RedirectResponse(url=f"/w/{workspace_id}?error=Cannot+remove+the+last+admin", status_code=303)
+        return RedirectResponse(url=f"/w/{workspace_id}?error=Could+not+remove+member", status_code=303)
+    return RedirectResponse(url=f"/w/{workspace_id}?success=Member+removed", status_code=303)
+

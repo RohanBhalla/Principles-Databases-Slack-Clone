@@ -94,6 +94,63 @@ BEGIN
 END;
 $$;
 
+-- Workspace member removal (admin only)
+CREATE OR REPLACE FUNCTION remove_workspace_member(
+  p_workspace_id INT,
+  p_actor_id INT,
+  p_target_user_id INT
+)
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  PERFORM _require(
+    EXISTS (
+      SELECT 1 FROM workspace_members
+      WHERE workspace_id = p_workspace_id
+        AND user_id = p_actor_id
+        AND is_admin = TRUE
+    ),
+    'not_authorized'
+  );
+
+  PERFORM _require(
+    EXISTS (
+      SELECT 1 FROM workspace_members
+      WHERE workspace_id = p_workspace_id
+        AND user_id = p_target_user_id
+    ),
+    'target_not_member'
+  );
+
+  -- Prevent removing the last admin.
+  IF (SELECT COUNT(*) FROM workspace_members WHERE workspace_id = p_workspace_id AND is_admin = TRUE) <= 1
+     AND (SELECT is_admin FROM workspace_members WHERE workspace_id = p_workspace_id AND user_id = p_target_user_id) = TRUE
+  THEN
+    PERFORM _require(FALSE, 'cannot_remove_last_admin');
+  END IF;
+
+  -- Remove user from all channels in the workspace.
+  DELETE FROM channel_members cm
+  USING channels c
+  WHERE cm.channel_id = c.channel_id
+    AND c.workspace_id = p_workspace_id
+    AND cm.user_id = p_target_user_id;
+
+  -- Remove any read markers for channels in the workspace.
+  DELETE FROM channel_reads cr
+  USING channels c
+  WHERE cr.channel_id = c.channel_id
+    AND c.workspace_id = p_workspace_id
+    AND cr.user_id = p_target_user_id;
+
+  -- Finally remove workspace membership.
+  DELETE FROM workspace_members
+  WHERE workspace_id = p_workspace_id
+    AND user_id = p_target_user_id;
+END;
+$$;
+
 -- Workspace update: description (admin only)
 CREATE OR REPLACE FUNCTION update_workspace_description(
   p_workspace_id INT,
@@ -319,6 +376,7 @@ LANGUAGE plpgsql
 AS $$
 DECLARE
   iid INT;
+  invitee_uid INT;
 BEGIN
   PERFORM _require(
     EXISTS (
@@ -329,6 +387,18 @@ BEGIN
     ),
     'not_authorized'
   );
+
+  -- If the invitee already has an account and is already a member, don't invite.
+  SELECT user_id INTO invitee_uid FROM users WHERE LOWER(email) = LOWER(p_invitee_email);
+  IF invitee_uid IS NOT NULL THEN
+    PERFORM _require(
+      NOT EXISTS (
+        SELECT 1 FROM workspace_members
+        WHERE workspace_id = p_workspace_id AND user_id = invitee_uid
+      ),
+      'already_member'
+    );
+  END IF;
 
   INSERT INTO invitations(inviter_id, invitee_email, workspace_id, channel_id, status)
   VALUES (p_inviter_id, p_invitee_email, p_workspace_id, NULL, 'pending')

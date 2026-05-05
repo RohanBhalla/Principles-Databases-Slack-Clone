@@ -25,6 +25,8 @@ async def invite_workspace(
         msg = str(e)
         if "not_authorized" in msg:
             return RedirectResponse(url=f"/w/{workspace_id}?error=Only+workspace+admins+can+invite", status_code=303)
+        if "already_member" in msg:
+            return RedirectResponse(url=f"/w/{workspace_id}?error=User+is+already+a+member", status_code=303)
         if "duplicate" in msg or "unique" in msg or "uniq_pending_invite" in msg:
             return RedirectResponse(url=f"/w/{workspace_id}?error=Invite+already+pending", status_code=303)
         return RedirectResponse(url=f"/w/{workspace_id}?error=Could+not+send+invite", status_code=303)
