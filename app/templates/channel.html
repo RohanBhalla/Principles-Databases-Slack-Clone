@@ -42,6 +42,17 @@
                 <button class="btn btn--small btn--ghost" type="submit">Invite</button>
               </form>
             {% endif %}
+            {% if channel.created_by == user.user_id and channel.type != 'direct' %}
+              <form
+                method="post"
+                action="/w/{{ workspace.workspace_id }}/c/{{ channel.channel_id }}/delete?csrf_token={{ request.session.get('csrf_token') }}"
+                class="row"
+                data-confirm="Delete #{{ channel.name }}? This cannot be undone."
+              >
+                <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}" />
+                <button class="btn btn--small btn--danger" type="submit">Delete channel</button>
+              </form>
+            {% endif %}
             <a href="/w/{{ workspace.workspace_id }}">Workspace</a>
           </div>
         </div>

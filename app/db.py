@@ -8,13 +8,6 @@ from psycopg_pool import AsyncConnectionPool
 
 
 async def _configure(conn) -> None:
-    # IMPORTANT: the local Postgres cluster was initialized with SQL_ASCII server
-    # encoding. With client_encoding=SQL_ASCII, psycopg cannot decode `varchar`/`text`
-    # columns to Python `str` and returns them as `bytes` instead — which then breaks
-    # any subsequent `LOWER(...) = LOWER(%s)` style queries (Postgres sees `bytea`).
-    # Forcing UTF-8 on every checked-out connection makes text round-trip as `str`.
-    # `psycopg_pool` requires the configure callback to leave the connection IDLE,
-    # so we run the SET in autocommit mode (no implicit transaction opened).
     await conn.set_autocommit(True)
     await conn.execute("SET client_encoding TO 'UTF8'")
     await conn.set_autocommit(False)

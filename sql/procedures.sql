@@ -215,6 +215,33 @@ BEGIN
 END;
 $$;
 
+-- Channel deletion (creator only; direct channels cannot be deleted)
+CREATE OR REPLACE FUNCTION delete_channel(
+  p_channel_id INT,
+  p_actor_id INT
+)
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  creator_id INT;
+  ctype TEXT;
+BEGIN
+  SELECT created_by, type
+    INTO creator_id, ctype
+  FROM channels
+  WHERE channel_id = p_channel_id;
+
+  PERFORM _require(creator_id IS NOT NULL, 'channel_not_found');
+  PERFORM _require(ctype <> 'direct', 'cannot_delete_direct');
+  PERFORM _require(creator_id = p_actor_id, 'not_authorized');
+
+  -- Cascades will clean up messages, members, reads, invites, reactions, etc.
+  DELETE FROM channels
+  WHERE channel_id = p_channel_id;
+END;
+$$;
+
 -- Direct channel: deterministic name + idempotent lookup
 CREATE OR REPLACE FUNCTION create_or_get_direct_channel(
   p_workspace_id INT,

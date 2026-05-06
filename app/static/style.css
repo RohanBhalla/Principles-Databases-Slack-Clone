@@ -156,6 +156,11 @@ h2 { margin: 0 0 12px; font-size: 18px; }
 }
 .btn--ghost:hover { background: rgba(156, 163, 175, .10); }
 
+.btn--danger {
+  background: rgba(239, 68, 68, 0.85);
+}
+.btn--danger:hover { background: rgba(239, 68, 68, 0.95); }
+
 .ws {
   display: grid;
   grid-template-columns: 320px 1fr;

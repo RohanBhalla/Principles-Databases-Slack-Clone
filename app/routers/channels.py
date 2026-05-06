@@ -10,6 +10,38 @@ from ..security import CurrentUser, require_user
 router = APIRouter()
 
 
+@router.post("/w/{workspace_id}/c/{channel_id}/delete")
+async def delete_channel(
+    request: Request,
+    workspace_id: int,
+    channel_id: int,
+    user: CurrentUser = Depends(require_user),
+):
+    pool = request.app.state.db_pool
+    async with pool.connection() as conn:
+        row = await fetch_one(
+            conn,
+            """
+            SELECT channel_id, workspace_id, type, created_by
+            FROM channels
+            WHERE channel_id = %s AND workspace_id = %s
+            """,
+            [channel_id, workspace_id],
+        )
+        if not row:
+            return RedirectResponse(url=f"/w/{workspace_id}?error=channel_not_found", status_code=303)
+
+        if row["type"] == "direct":
+            return RedirectResponse(url=f"/w/{workspace_id}/c/{channel_id}?error=cannot_delete_direct", status_code=303)
+
+        if int(row["created_by"]) != int(user.user_id):
+            return RedirectResponse(url=f"/w/{workspace_id}/c/{channel_id}?error=not_authorized", status_code=303)
+
+        await call_proc(conn, "delete_channel", channel_id, user.user_id)
+
+    return RedirectResponse(url=f"/w/{workspace_id}?success=channel_deleted", status_code=303)
+
+
 @router.get("/w/{workspace_id}/c/{channel_id}")
 async def channel_view(
     request: Request,
@@ -25,7 +57,7 @@ async def channel_view(
         channel = await fetch_one(
             conn,
             """
-            SELECT c.channel_id, c.workspace_id, c.name, c.type
+            SELECT c.channel_id, c.workspace_id, c.name, c.type, c.created_by
             FROM channels c
             JOIN channel_members cm ON cm.channel_id = c.channel_id
             WHERE c.channel_id = %s AND c.workspace_id = %s AND cm.user_id = %s

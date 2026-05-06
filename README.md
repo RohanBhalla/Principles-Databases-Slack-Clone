@@ -4,7 +4,7 @@ This is the Project 2 web UI for the Project 1 database (Slack-like system).
 
 ## Prereqs
 
-- PostgreSQL 15+ (you already have a local cluster under `Project1/.pgdata` on port **5433**)
+- PostgreSQL 15+ (you already have a local cluster under `Project1/.pgdata` on port **5432**)
 - Python 3.11+
 
 ## Setup
@@ -20,10 +20,10 @@ pg_ctl -D "Project1/.pgdata" -l "Project1/.pglog" start
 2) Create and load the `snickr` database:
 
 ```bash
-createdb -p 5433 snickr
-psql -p 5433 -d snickr -f "Principles-Databases-Slack-Clone/sql/schema_v2.sql"
-psql -p 5433 -d snickr -f "Principles-Databases-Slack-Clone/sql/procedures.sql"
-psql -p 5433 -d snickr -f "Principles-Databases-Slack-Clone/sql/seed_v2.sql"
+createdb -p 5432 snickr
+psql -p 5432 -d snickr -f "Principles-Databases-Slack-Clone/sql/schema_v2.sql"
+psql -p 5432 -d snickr -f "Principles-Databases-Slack-Clone/sql/procedures.sql"
+psql -p 5432 -d snickr -f "Principles-Databases-Slack-Clone/sql/seed_v2.sql"
 ```
 
 3) Create a venv and install dependencies:
@@ -43,7 +43,7 @@ cp .env.example .env
 
 Set:
 
-- `DATABASE_URL=postgresql://localhost:5433/snickr`
+- `DATABASE_URL=postgresql://localhost:5432/snickr`
 - `SESSION_SECRET=...` (any long random string is fine)
 
 ## Run
