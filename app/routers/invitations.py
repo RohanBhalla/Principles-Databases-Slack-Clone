@@ -9,7 +9,8 @@ from ..security import CurrentUser, require_user
 
 router = APIRouter()
 
-
+# Invite to workspace route
+# Invite a user to a workspace
 @router.post("/w/{workspace_id}/invitations")
 async def invite_workspace(
     request: Request,
@@ -32,7 +33,8 @@ async def invite_workspace(
         return RedirectResponse(url=f"/w/{workspace_id}?error=Could+not+send+invite", status_code=303)
     return RedirectResponse(url=f"/w/{workspace_id}?success=Invite+sent", status_code=303)
 
-
+# Invite to channel route
+# Invite a user to a channel
 @router.post("/w/{workspace_id}/c/{channel_id}/invitations")
 async def invite_channel(
     request: Request,
@@ -57,7 +59,7 @@ async def invite_channel(
         return RedirectResponse(url=f"/w/{workspace_id}/c/{channel_id}?error=Could+not+send+invite", status_code=303)
     return RedirectResponse(url=f"/w/{workspace_id}/c/{channel_id}?success=Invite+sent", status_code=303)
 
-
+# Respond to invitation route
 @router.post("/invitations/{invitation_id}/respond")
 async def respond(
     request: Request,

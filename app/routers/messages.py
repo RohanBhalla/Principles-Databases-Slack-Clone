@@ -9,7 +9,7 @@ from ..security import CurrentUser, require_user
 
 router = APIRouter()
 
-
+# Post a message to a channel
 @router.post("/w/{workspace_id}/c/{channel_id}/messages")
 async def post_message(
     request: Request,
@@ -23,7 +23,7 @@ async def post_message(
         await call_proc(conn, "post_message", channel_id, user.user_id, content)
     return RedirectResponse(url=f"/w/{workspace_id}/c/{channel_id}", status_code=303)
 
-
+# Toggle reaction route
 @router.post("/messages/{message_id}/react")
 async def toggle_reaction(
     request: Request,

@@ -5,10 +5,6 @@ from __future__ import annotations
 #exposes actions like deleting a channel. Access is protected by `require_user`,
 #and membership/authorization is validated via queries and stored procedures.
 
-#This router renders the channel view (messages + reactions + sidebar data) and
-#exposes actions like deleting a channel. Access is protected by `require_user`,
-#and membership/authorization is validated via queries and stored procedures.
-
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
 

@@ -9,7 +9,8 @@ from ..security import CurrentUser, require_user
 
 router = APIRouter()
 
-
+# Home route
+# Display the home page
 @router.get("/")
 async def home(request: Request, user: CurrentUser = Depends(require_user)):
     pool = request.app.state.db_pool
@@ -55,12 +56,12 @@ async def home(request: Request, user: CurrentUser = Depends(require_user)):
         {"user": user, "workspaces": workspaces, "invitations": invitations},
     )
 
-
+# New workspace page route
 @router.get("/workspaces/new")
 async def new_workspace_page(request: Request, user: CurrentUser = Depends(require_user)):
     return request.app.state.templates.TemplateResponse(request, "workspace_new.html", {"user": user})
 
-
+# Create workspace route
 @router.post("/workspaces")
 async def create_workspace(
     request: Request,
@@ -73,7 +74,8 @@ async def create_workspace(
         wid = await call_proc(conn, "create_workspace", name, description or None, user.user_id)
     return RedirectResponse(url=f"/w/{wid}", status_code=303)
 
-
+# Workspace dashboard route
+# Display the workspace dashboard
 @router.get("/w/{workspace_id}")
 async def workspace_dashboard(request: Request, workspace_id: int, user: CurrentUser = Depends(require_user)):
     pool = request.app.state.db_pool
@@ -134,7 +136,7 @@ async def workspace_dashboard(request: Request, workspace_id: int, user: Current
         },
     )
 
-
+# Create channel route
 @router.post("/w/{workspace_id}/channels")
 async def create_channel(
     request: Request,
@@ -148,7 +150,7 @@ async def create_channel(
         cid = await call_proc(conn, "create_channel", workspace_id, name, type, user.user_id)
     return RedirectResponse(url=f"/w/{workspace_id}/c/{cid}", status_code=303)
 
-
+# Promote admin route
 @router.post("/w/{workspace_id}/admins")
 async def promote_admin(
     request: Request,
@@ -161,7 +163,7 @@ async def promote_admin(
         await call_proc(conn, "add_workspace_admin", workspace_id, user.user_id, target_user_id)
     return RedirectResponse(url=f"/w/{workspace_id}", status_code=303)
 
-
+# Update workspace description route
 @router.post("/w/{workspace_id}/description")
 async def update_description(
     request: Request,
@@ -181,7 +183,7 @@ async def update_description(
         return RedirectResponse(url=f"/w/{workspace_id}?error=Could+not+update+description", status_code=303)
     return RedirectResponse(url=f"/w/{workspace_id}?success=Description+updated", status_code=303)
 
-
+# Remove member route
 @router.post("/w/{workspace_id}/members/remove")
 async def remove_member(
     request: Request,

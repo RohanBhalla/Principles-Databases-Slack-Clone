@@ -8,7 +8,7 @@ from ..security import CurrentUser, require_user
 
 router = APIRouter()
 
-
+# Search for messages route
 @router.get("/search")
 async def search(request: Request, user: CurrentUser = Depends(require_user)):
     q = (request.query_params.get("q") or "").strip()
