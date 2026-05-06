@@ -11,6 +11,8 @@ from fastapi import Depends, HTTPException, Request
 from .db import fetch_one
 
 
+# Hash a password
+# Use bcrypt to hash a password
 def hash_password(plain_password: str) -> str:
     # bcrypt has a 72-byte limit; enforce explicitly for predictable behavior.
     pw = plain_password.encode("utf-8")
@@ -18,7 +20,7 @@ def hash_password(plain_password: str) -> str:
         pw = pw[:72]
     return bcrypt.hashpw(pw, bcrypt.gensalt(rounds=12)).decode("utf-8")
 
-
+# Verify a password against a bcrypt hash
 def verify_password(plain_password: str, password_hash: str | bytes) -> bool:
     # Works for bcrypt hashes produced by PostgreSQL `crypt(..., gen_salt('bf'))`
     # and by `hash_password()` above.
@@ -39,6 +41,9 @@ def verify_password(plain_password: str, password_hash: str | bytes) -> bool:
         return False
 
 
+# Ensure a CSRF token
+# Generate a CSRF token if not present
+# Return the CSRF token
 def ensure_csrf_token(session: dict[str, Any]) -> str:
     token = session.get("csrf_token")
     if not token:
@@ -47,6 +52,8 @@ def ensure_csrf_token(session: dict[str, Any]) -> str:
     return token
 
 
+
+# Raise an HTTPException if the CSRF token is missing or invalid
 def check_csrf(request: Request, submitted: str | None) -> None:
     session = request.session
     expected = session.get("csrf_token")
@@ -57,6 +64,8 @@ def check_csrf(request: Request, submitted: str | None) -> None:
         raise HTTPException(status_code=403, detail="bad_csrf")
 
 
+# Current user class
+# User ID, email, username, nickname
 @dataclass(frozen=True)
 class CurrentUser:
     user_id: int
@@ -65,6 +74,9 @@ class CurrentUser:
     nickname: str | None
 
 
+# Current user dependency
+# Get the current user from the session
+# Raise an HTTPException if the user is not authenticated
 async def current_user(request: Request) -> CurrentUser:
     uid = request.session.get("user_id")
     if not uid:
@@ -89,7 +101,9 @@ async def current_user(request: Request) -> CurrentUser:
     )
 
 
-# Very small demo-grade rate limiter (memory only)
+# Login rate limiter
+# Window in seconds, max attempts
+# Allow or deny a login attempt
 class LoginRateLimiter:
     def __init__(self, window_seconds: int = 300, max_attempts: int = 10) -> None:
         self.window = window_seconds
@@ -111,6 +125,7 @@ class LoginRateLimiter:
         return True
 
 
+# Get the current user from the session
 def require_user(user: CurrentUser = Depends(current_user)) -> CurrentUser:
     return user
 

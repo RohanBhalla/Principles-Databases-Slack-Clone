@@ -16,11 +16,12 @@ from .security import LoginRateLimiter, ensure_csrf_token
 
 
 templates = Jinja2Templates(directory="app/templates")
-# Python 3.14 + Jinja2 3.1.x: default template cache keys include weakrefs to the loader,
-# which can be unhashable for FileSystemLoader and crash template loading.
 templates.env.cache = None
 
 
+# Lifespan
+# Open the database pool
+# Close the database pool
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.templates = templates
@@ -36,6 +37,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
+# Add security headers to the response
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
     response = await call_next(request)
@@ -61,7 +63,7 @@ async def ensure_csrf_middleware(request: Request, call_next):
 @app.middleware("http")
 async def csrf_protect(request: Request, call_next):
     if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
-        # IMPORTANT: do not call `request.form()` here — it consumes the body and breaks
+        # Do not call `request.form()` here — it consumes the body and breaks
         # FastAPI `Form(...)` dependencies on the route (422 "Field required").
         # Token must come from the URL query string (?csrf_token=...) or X-CSRF-Token header.
         expected = request.session.get("csrf_token")

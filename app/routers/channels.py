@@ -1,5 +1,14 @@
 from __future__ import annotations
 
+#Channel-related routes are defined here
+#This router renders the channel view (messages + reactions + sidebar data) and
+#exposes actions like deleting a channel. Access is protected by `require_user`,
+#and membership/authorization is validated via queries and stored procedures.
+
+#This router renders the channel view (messages + reactions + sidebar data) and
+#exposes actions like deleting a channel. Access is protected by `require_user`,
+#and membership/authorization is validated via queries and stored procedures.
+
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
 
@@ -10,6 +19,8 @@ from ..security import CurrentUser, require_user
 router = APIRouter()
 
 
+# Delete a channel route
+# Delete a non-direct channel if the current user is the creator for it
 @router.post("/w/{workspace_id}/c/{channel_id}/delete")
 async def delete_channel(
     request: Request,
@@ -42,6 +53,8 @@ async def delete_channel(
     return RedirectResponse(url=f"/w/{workspace_id}?success=channel_deleted", status_code=303)
 
 
+# Channel view route
+# Render a channel page: sidebar channels, unread counts, messages, reactions
 @router.get("/w/{workspace_id}/c/{channel_id}")
 async def channel_view(
     request: Request,
@@ -51,7 +64,7 @@ async def channel_view(
 ):
     pool = request.app.state.db_pool
     async with pool.connection() as conn:
-        # Authorization: must be workspace member + channel member; proc enforces too.
+        # Mark the channel as read for the current user
         await call_proc(conn, "mark_channel_read", channel_id, user.user_id)
 
         channel = await fetch_one(

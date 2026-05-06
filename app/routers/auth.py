@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+#Authentication routes are defined here
+#This router renders the login/register pages, validates credentials against the DB,
+#and stores the authenticated user in the session via `request.session["user_id"]`
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import RedirectResponse
 
@@ -9,7 +12,8 @@ from ..security import hash_password, verify_password
 
 router = APIRouter()
 
-
+# Login page route
+# Render the login page or redirect home if already logged in
 @router.get("/login")
 async def login_page(request: Request):
     if request.session.get("user_id"):
@@ -17,6 +21,10 @@ async def login_page(request: Request):
     return request.app.state.templates.TemplateResponse(request, "login.html")
 
 
+# Login route
+# Authenticate a user and start a session by setting `session["user_id"]`
+# Validate credentials against the DB
+# Store the authenticated user in the session via `request.session["user_id"]`
 @router.post("/login")
 async def login(
     request: Request,
@@ -53,13 +61,18 @@ async def login(
     return RedirectResponse(url="/", status_code=303)
 
 
+# Register page route
+# Render the registration page or redirect home if already logged in
 @router.get("/register")
 async def register_page(request: Request):
+    """Render the registration page (or redirect home if already logged in)."""
     if request.session.get("user_id"):
         return RedirectResponse(url="/", status_code=303)
     return request.app.state.templates.TemplateResponse(request, "register.html")
 
-
+# Register route
+# Create a new user account
+# Start a session for the new user
 @router.post("/register")
 async def register(
     request: Request,
@@ -86,8 +99,11 @@ async def register(
     return RedirectResponse(url="/", status_code=303)
 
 
+# Logout route
+# End the current session and redirect back to the login page
 @router.post("/logout")
 async def logout(request: Request):
+    """End the current session and redirect back to the login page."""
     request.session.clear()
     return RedirectResponse(url="/login", status_code=303)
 
