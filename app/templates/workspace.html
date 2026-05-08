@@ -12,6 +12,27 @@
           {% endif %}
         </div>
 
+        {% set admin_count = members | selectattr('is_admin') | list | length %}
+        {% set is_sole_admin = workspace.is_admin and admin_count <= 1 %}
+        <div style="margin-top: 10px;">
+          {% if is_sole_admin %}
+            <button class="btn btn--small btn--ghost" type="button" disabled
+                    title="Promote another admin before leaving">Leave workspace</button>
+            <div class="muted" style="margin-top: 6px;">
+              You are the only admin. Promote another member to admin before leaving.
+            </div>
+          {% else %}
+            <form
+              method="post"
+              action="/w/{{ workspace.workspace_id }}/leave?csrf_token={{ request.session.get('csrf_token') }}"
+              class="inline"
+            >
+              <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}" />
+              <button class="btn btn--small btn--ghost" type="submit">Leave workspace</button>
+            </form>
+          {% endif %}
+        </div>
+
         {% if workspace.is_admin %}
           <form
             id="ws-desc-form"

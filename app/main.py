@@ -41,14 +41,32 @@ app = FastAPI(lifespan=lifespan)
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
     response = await call_next(request)
-    response.headers["Content-Security-Policy"] = (
-        "default-src 'self'; "
-        "img-src 'self' data:; "
-        "style-src 'self' 'unsafe-inline'; "
-        "script-src 'self'; "
-        "base-uri 'self'; "
-        "frame-ancestors 'none'"
-    )
+
+    # FastAPI's /docs and /redoc load Swagger UI / ReDoc assets from a CDN.
+    # Relax CSP only for those paths so the docs UI can render.
+    path = request.url.path
+    is_docs = path in {"/docs", "/redoc", "/docs/oauth2-redirect"} or path.startswith("/openapi")
+
+    if is_docs:
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "img-src 'self' data: https://fastapi.tiangolo.com https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "script-src 'self' https://cdn.jsdelivr.net; "
+            "font-src 'self' data: https://cdn.jsdelivr.net; "
+            "worker-src 'self' blob:; "
+            "base-uri 'self'; "
+            "frame-ancestors 'none'"
+        )
+    else:
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "img-src 'self' data:; "
+            "style-src 'self' 'unsafe-inline'; "
+            "script-src 'self'; "
+            "base-uri 'self'; "
+            "frame-ancestors 'none'"
+        )
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "same-origin"
     return response

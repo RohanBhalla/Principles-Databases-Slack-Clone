@@ -151,6 +151,62 @@ BEGIN
 END;
 $$;
 
+-- Workspace self-service leave
+CREATE OR REPLACE FUNCTION leave_workspace(
+  p_workspace_id INT,
+  p_user_id INT
+)
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  is_admin_member BOOLEAN;
+  admin_count INT;
+BEGIN
+  PERFORM _require(
+    EXISTS (
+      SELECT 1 FROM workspace_members
+      WHERE workspace_id = p_workspace_id
+        AND user_id = p_user_id
+    ),
+    'not_workspace_member'
+  );
+
+  SELECT is_admin INTO is_admin_member
+  FROM workspace_members
+  WHERE workspace_id = p_workspace_id
+    AND user_id = p_user_id;
+
+  SELECT COUNT(*) INTO admin_count
+  FROM workspace_members
+  WHERE workspace_id = p_workspace_id
+    AND is_admin = TRUE;
+
+  IF COALESCE(is_admin_member, FALSE) AND admin_count <= 1 THEN
+    PERFORM _require(FALSE, 'cannot_leave_last_admin');
+  END IF;
+
+  -- Remove user from all channels in the workspace.
+  DELETE FROM channel_members cm
+  USING channels c
+  WHERE cm.channel_id = c.channel_id
+    AND c.workspace_id = p_workspace_id
+    AND cm.user_id = p_user_id;
+
+  -- Remove any read markers for channels in the workspace.
+  DELETE FROM channel_reads cr
+  USING channels c
+  WHERE cr.channel_id = c.channel_id
+    AND c.workspace_id = p_workspace_id
+    AND cr.user_id = p_user_id;
+
+  -- Remove workspace membership.
+  DELETE FROM workspace_members
+  WHERE workspace_id = p_workspace_id
+    AND user_id = p_user_id;
+END;
+$$;
+
 -- Workspace update: description (admin only)
 CREATE OR REPLACE FUNCTION update_workspace_description(
   p_workspace_id INT,

@@ -50,10 +50,12 @@ async def home(request: Request, user: CurrentUser = Depends(require_user)):
             [user.email],
         )
 
+    error = request.query_params.get("error")
+    success = request.query_params.get("success")
     return request.app.state.templates.TemplateResponse(
         request,
         "home.html",
-        {"user": user, "workspaces": workspaces, "invitations": invitations},
+        {"user": user, "workspaces": workspaces, "invitations": invitations, "error": error, "success": success},
     )
 
 # New workspace page route
@@ -203,4 +205,21 @@ async def remove_member(
             return RedirectResponse(url=f"/w/{workspace_id}?error=Cannot+remove+the+last+admin", status_code=303)
         return RedirectResponse(url=f"/w/{workspace_id}?error=Could+not+remove+member", status_code=303)
     return RedirectResponse(url=f"/w/{workspace_id}?success=Member+removed", status_code=303)
+
+
+@router.post("/w/{workspace_id}/leave")
+async def leave_workspace(request: Request, workspace_id: int, user: CurrentUser = Depends(require_user)):
+    pool = request.app.state.db_pool
+    try:
+        async with pool.connection() as conn:
+            await call_proc(conn, "leave_workspace", workspace_id, user.user_id)
+    except Exception as e:
+        msg = str(e)
+        if "cannot_leave_last_admin" in msg:
+            return RedirectResponse(url=f"/w/{workspace_id}?error=Cannot+leave+as+the+last+admin", status_code=303)
+        if "not_workspace_member" in msg:
+            return RedirectResponse(url="/?error=You+are+not+a+member+of+that+workspace", status_code=303)
+        return RedirectResponse(url=f"/w/{workspace_id}?error=Could+not+leave+workspace", status_code=303)
+
+    return RedirectResponse(url="/?success=Left+workspace", status_code=303)
 
